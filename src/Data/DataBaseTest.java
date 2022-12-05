@@ -1,5 +1,6 @@
 package Data;
 
+import Discount.Discount;
 import Exceptions.EmailNotFoundException;
 import Exceptions.EmailRegisteredBeforeException;
 import Exceptions.UserNameRegisteredBeforeException;
@@ -8,13 +9,16 @@ import PaymentServices.Transaction;
 
 import java.util.ArrayList;
 
-public class DataBaseTest implements StorageInterface {
+public class DataBaseTest implements IStorage {
     ArrayList<User> users;
     ArrayList<Transaction> transactions;
     ArrayList<Transaction> refundRequests;
+    ArrayList<Discount> discounts;
+
     public DataBaseTest() {
         users = new ArrayList<>();
         transactions = new ArrayList<>();
+        discounts = new ArrayList<>();
     }
     @Override
     public User signIn(String email, String password) throws Exception{
@@ -76,5 +80,14 @@ public class DataBaseTest implements StorageInterface {
             }
         }
         return false;
+    }
+
+    @Override
+    public void addDiscount(Discount discount) {
+        discounts.add(discount);
+    }
+
+    public ArrayList<Discount> getDiscounts() {
+        return discounts;
     }
 }

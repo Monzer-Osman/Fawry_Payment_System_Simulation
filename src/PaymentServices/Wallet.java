@@ -1,41 +1,37 @@
 package PaymentServices;
+import Exceptions.InSuffecientBalance;
 
 public class Wallet implements PaymentService {
-    private int balance;
     public final String BANK_ACCOUNT = "294902942341";
-    public Wallet(){
+    private int balance;
+
+    public Wallet() {
         balance = 0;
     }
+
     public int getBalance() {
         return balance;
     }
 
-    public void setBalance(int balance) {
-        this.balance = balance;
-    }
-
-    public void addBalance(CreditCard userCreditCard, int amount){
-        if(userCreditCard.pay(BANK_ACCOUNT, amount).getTransactionStatus()
+    public void addBalance(CreditCard userCreditCard, int amount) throws Exception {
+        if (userCreditCard.pay(BANK_ACCOUNT, amount).getTransactionStatus()
                 == Transaction.TransactionStatus.COMPLETED) {
             balance += amount;
         }
     }
-    @Override
-    public Transaction pay(String accountNumber, int amount) {
-        Transaction transaction = new Transaction(BANK_ACCOUNT, accountNumber,
-                Transaction.TransactionStatus.FAILED, amount);
 
-        if(amount <= balance) {
+    @Override
+    public Transaction pay(String accountNumber, int amount) throws Exception {
+        if (amount <= balance) {
             CreditCard creditCard = new CreditCard("FawryAccount",
                     "FawryAccount", BANK_ACCOUNT);
-            if(creditCard.pay(accountNumber, amount).getTransactionStatus()
-                    == Transaction.TransactionStatus.COMPLETED){
+            Transaction transaction = creditCard.pay(accountNumber, amount);
+            if (transaction.getTransactionStatus().equals(Transaction.TransactionStatus.COMPLETED)) {
                 balance -= amount;
-                transaction.setTransactionStatus(Transaction.TransactionStatus.COMPLETED);
-                return transaction;
             }
+            return transaction;
+        } else {
+            throw new InSuffecientBalance("Insuffecint Balance in Wallet :(");
         }
-        return transaction;
     }
-
 }

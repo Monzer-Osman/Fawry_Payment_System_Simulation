@@ -15,17 +15,13 @@ public class We implements MobileRechargeService, InternetPaymentService{
         return weObject;
     }
 
-    public String getWeBankNumber(){
-        return BANK_ACCOUNT_NUMBER;
+    @Override
+    public void rechargeInternetBy(String landLineNumber, int amount) {
+        //TODO send to We api the phoneNumber and the amount to be recharged
     }
 
     @Override
     public void rechargeNumberBy(String phoneNumber, int amount) {
         //TODO send to We api the phoneNumber and the amount to be recharged
-    }
-
-    @Override
-    public void rechargeInternetBy(String landLineNumber, int amount) {
-        //TODO send to Orange api the phoneNumber and the amount to be recharged
     }
 }

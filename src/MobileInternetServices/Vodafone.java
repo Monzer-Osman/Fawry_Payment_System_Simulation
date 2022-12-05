@@ -15,17 +15,13 @@ public class Vodafone implements MobileRechargeService, InternetPaymentService{
         return vodafoneObject;
     }
 
-    public String getVodafoneBankNumber(){
-        return BANK_ACCOUNT_NUMBER;
+    @Override
+    public void rechargeInternetBy(String landLineNumber, int amount) {
+        //TODO send to vodafone api the landline and the amount to be recharged
     }
 
     @Override
     public void rechargeNumberBy(String phoneNumber, int amount) {
-        //TODO send to vodafone api the phoneNumber and the amount to be recharged
-    }
-
-    @Override
-    public void rechargeInternetBy(String landLineNumber, int amount) {
         //TODO send to vodafone api the phoneNumber and the amount to be recharged
     }
 }

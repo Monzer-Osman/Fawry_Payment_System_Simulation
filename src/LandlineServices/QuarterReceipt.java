@@ -1,7 +1,6 @@
 package LandlineServices;
 
 public class QuarterReceipt implements LandlineService{
-
     public final String BANK_ACCOUNT = "827393292311";
     private static QuarterReceipt quarterReceiptObject;
 

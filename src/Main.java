@@ -1,46 +1,40 @@
-import Data.DataBaseHandler;
-import Data.DataBaseTest;
-import Data.StorageInterface;
-import Data.User;
-import DonationsServices.CancerHospital;
-import DonationsServices.DonationService;
-import DonationsServices.NGO;
-import DonationsServices.School;
-import Exceptions.ServiceNotFoundException;
-import Exceptions.WrongChoiceException;
-import LandlineServices.LandlineService;
-import LandlineServices.MonthlyReceipt;
-import LandlineServices.QuarterReceipt;
+import Data.*;
+import Discount.Discount;
+import Discount.DiscountHandler;
+import DonationsServices.*;
+import Exceptions.*;
+import LandlineServices.*;
 import MobileInternetServices.*;
-import PaymentServices.CreditCard;
-import PaymentServices.PaymentService;
-import PaymentServices.Transaction;
+import PaymentServices.*;
+
 import java.util.ArrayList;
 import java.util.Scanner;
-    
+
 public class Main {
     private static Scanner scan;
     private static User user;
     private static Menu programMenu;
-    private static StorageInterface database;
+    private static IStorage database;
     private static DataBaseHandler dataBaseHandler;
     private static LoginSubSystem loginSubSystem;
     private static PaymentService paymentService;
+    private static DiscountHandler discountHandler;
 
     public static void main(String[] args) {
         programMenu = new Menu();
         database = new DataBaseTest();
         dataBaseHandler = new DataBaseHandler(database);
         loginSubSystem = new LoginSubSystem(dataBaseHandler);
+        discountHandler = new DiscountHandler(dataBaseHandler);
         user = new User("-", "-", "-");
         scan = new Scanner(System.in);
         int loginAttempts = 0;
 
-        signUpFakeUsers(loginSubSystem);
-        programMenu.displayWelcomeMessage();
-
+        signUpFakeUsers();
+        addDiscount();
+        displayWelcomeMessage();
         while (loginAttempts < 4) {
-            programMenu.startUpMenu();
+            displayStartUpMenu();
 
             int choice = scan.nextInt();
             if (choice == 1) {
@@ -51,17 +45,17 @@ public class Main {
 
             if (!user.getEmail().equals("-")) {
                 while (choice != 0) {
-                    programMenu.mainMenu();
+                    displayMainMenu();
                     choice = scan.nextInt();
                     switch (choice) {
                         case -1:
-                            programMenu.mainMenu();
+                            displayMainMenu();
                             break;
                         case 1:
                             queryAndDisplayServices();
                             break;
                         case 2:
-                            //TODO complete the business logic
+                            displayAvailableDiscounts();
                             break;
                         case 3:
                             addFundsToWallet();
@@ -71,6 +65,7 @@ public class Main {
                             break;
                     }
                 }
+                return;
             }
             loginAttempts += 1;
         }
@@ -119,13 +114,13 @@ public class Main {
     }
 
     public static void queryServices(String query) throws ServiceNotFoundException {
-        if (query.contains("mobile recharge services")) {
+        if (query.contains("mobile")) {
             chooseFromMobileRechargeServices();
-        } else if (query.contains("internet payment services")) {
+        } else if (query.contains("internet ")) {
             chooseFromInternetPaymentServices();
-        } else if (query.contains("landline services")) {
+        } else if (query.contains("landline")) {
             chooseFromLandlineServices();
-        } else if (query.contains("donation services")) {
+        } else if (query.contains("donation")) {
             chooseFromDonationsServices();
         } else {
             throw new ServiceNotFoundException("Service Not-Found");
@@ -137,13 +132,17 @@ public class Main {
         System.out.println("Enter choice : ");
         int choice = scan.nextInt();
         if (choice == 1) {
-            makeMRSTransaction(Vodafone.getInstance());
+            makeMRSTransaction(Vodafone.getInstance(),
+                    Vodafone.getInstance().BANK_ACCOUNT_NUMBER);
         } else if (choice == 2) {
-            makeMRSTransaction(Etisalat.getInstance());
+            makeMRSTransaction(Etisalat.getInstance(),
+                    Etisalat.getInstance().BANK_ACCOUNT_NUMBER);
         } else if (choice == 3) {
-            makeMRSTransaction(We.getInstance());
+            makeMRSTransaction(We.getInstance(),
+                    We.getInstance().BANK_ACCOUNT_NUMBER);
         } else if (choice == 4) {
-            makeMRSTransaction(Orange.getInstance());
+            makeMRSTransaction(Orange.getInstance(),
+                    Orange.getInstance().BANK_ACCOUNT_NUMBER);
         }
     }
 
@@ -154,21 +153,33 @@ public class Main {
         System.out.println("4-Orange");
     }
 
-    private static void makeMRSTransaction(MobileRechargeService mobileRechargeService) {
+    private static void makeMRSTransaction(
+            MobileRechargeService mobileRechargeService, String bankAccountNumber) {
         System.out.println("Enter PhoneNumber");
         String phoneNumber = scan.next();
         System.out.println("Enter Recharge Amount");
         int amount = scan.nextInt();
-        programMenu.displayPaymentMethods();
+        displayPaymentMethods();
         paymentService = choosePaymentMethod();
+        System.out.println("Have a DiscountCode ?\nEnter it / Enter -1 to continue ");
+        String discountCode = scan.next();
         if (paymentService != null) {
-            Transaction newTransaction = paymentService.pay(
-                    Vodafone.getInstance().BANK_ACCOUNT_NUMBER, amount);
-            dataBaseHandler.addTransaction(newTransaction);
-            if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED)
-                mobileRechargeService.rechargeNumberBy(phoneNumber, amount);
+            try {
+                if (!discountCode.equals("-1")) {
+                    amount = (int) ((float)amount * discountHandler.getDiscountAmount(
+                            discountCode, Discount.DiscountType.MobileRechargeServices));
+                }
+                Transaction newTransaction = paymentService.pay(bankAccountNumber, amount);
+                dataBaseHandler.addTransaction(newTransaction);
+                if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED) {
+                    mobileRechargeService.rechargeNumberBy(phoneNumber, amount);
+                }
+            } catch(Exception e){
+                System.out.println(e.getMessage().toString());
+            }
         }
     }
+
 
     private static void chooseFromInternetPaymentServices() {
         displayInternetPaymentServices();
@@ -202,13 +213,24 @@ public class Main {
         String landLineNumber = scan.next();
         System.out.println("Enter Recharge Amount");
         int amount = scan.nextInt();
-        programMenu.displayPaymentMethods();
+        displayPaymentMethods();
         paymentService = choosePaymentMethod();
+        System.out.println("Have a DiscountCode ?\nEnter it / Enter -1 to continue ");
+        String discountCode = scan.next();
         if (paymentService != null) {
-            Transaction newTransaction = paymentService.pay(bankAccount, amount);
-            dataBaseHandler.addTransaction(newTransaction);
-            if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED)
-                internetPaymentService.rechargeInternetBy(landLineNumber, amount);
+            try {
+                if (!discountCode.equals("-1")) {
+                    amount = (int) ((float)amount * discountHandler.getDiscountAmount(
+                            discountCode, Discount.DiscountType.InternetPaymentServices));
+                }
+                Transaction newTransaction = paymentService.pay(bankAccount, amount);
+                dataBaseHandler.addTransaction(newTransaction);
+                if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED) {
+                    internetPaymentService.rechargeInternetBy(landLineNumber, amount);
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage().toString());
+            }
         }
     }
 
@@ -235,13 +257,24 @@ public class Main {
         String receiptNumber = scan.next();
         System.out.println("Enter Receipt Fees");
         int amount = scan.nextInt();
-        programMenu.displayPaymentMethods();
+        displayPaymentMethods();
         paymentService = choosePaymentMethod();
+        System.out.println("Have a DiscountCode ?\nEnter it / Enter -1 to continue ");
+        String discountCode = scan.next();
         if (paymentService != null) {
-            Transaction newTransaction = paymentService.pay(bankAccount, amount);
-            dataBaseHandler.addTransaction(newTransaction);
-            if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED)
-                landlineService.payReceipt(receiptNumber);
+            try {
+                if (!discountCode.equals("-1")) {
+                    amount = (int) (amount * discountHandler.getDiscountAmount(
+                            discountCode, Discount.DiscountType.LandlineServices));
+                }
+                Transaction newTransaction = paymentService.pay(bankAccount, amount);
+                dataBaseHandler.addTransaction(newTransaction);
+                if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED) {
+                    landlineService.payReceipt(receiptNumber);
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage().toString());
+            }
         }
     }
 
@@ -250,13 +283,24 @@ public class Main {
         String receiptNumber = scan.next();
         System.out.println("Enter Receipt Fees");
         int amount = scan.nextInt();
-        programMenu.displayPaymentMethods();
+        displayPaymentMethods();
         paymentService = choosePaymentMethod();
+        System.out.println("Have a DiscountCode ?\nEnter it / Enter -1 to continue ");
+        String discountCode = scan.next();
         if (paymentService != null) {
-            Transaction newTransaction = paymentService.pay(bankAccount, amount);
-            dataBaseHandler.addTransaction(newTransaction);
-            if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED)
-                landlineService.payReceipt(receiptNumber);
+            try {
+                if (!discountCode.equals("-1")) {
+                    amount = (int) (amount * discountHandler.getDiscountAmount(
+                            discountCode, Discount.DiscountType.LandlineServices));
+                }
+                Transaction newTransaction = paymentService.pay(bankAccount, amount);
+                dataBaseHandler.addTransaction(newTransaction);
+                if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED) {
+                    landlineService.payReceipt(receiptNumber);
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage().toString());
+            }
         }
     }
 
@@ -284,13 +328,24 @@ public class Main {
     private static void makeDonationTransaction(DonationService donationService, String bankAccount) {
         System.out.println("Enter Donation Amount");
         int donationAmount = scan.nextInt();
-        programMenu.displayPaymentMethods();
+        displayPaymentMethods();
         paymentService = choosePaymentMethod();
+        System.out.println("Have a DiscountCode ?\nEnter it / Enter -1 to continue ");
+        String discountCode = scan.next();
         if (paymentService != null) {
-            Transaction newTransaction = paymentService.pay(bankAccount, donationAmount);
-            dataBaseHandler.addTransaction(newTransaction);
-            if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED)
-                donationService.donateBy(donationAmount);
+            try {
+                if (!discountCode.equals("-1")) {
+                    donationAmount = (int) (donationAmount * discountHandler.getDiscountAmount(
+                            discountCode, Discount.DiscountType.DonationServices));
+                }
+                Transaction newTransaction = paymentService.pay(bankAccount, donationAmount);
+                dataBaseHandler.addTransaction(newTransaction);
+                if (newTransaction.getTransactionStatus() == Transaction.TransactionStatus.COMPLETED) {
+                    donationService.donateBy(donationAmount);
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage().toString());
+            }
         }
     }
 
@@ -328,8 +383,16 @@ public class Main {
         int amount = scan.nextInt();
         CreditCard creditCard = new CreditCard(
                 firstName, lastName, cardNumber);
-        user.addFundsToWallet(creditCard, amount);
-        System.out.println("Now you have " + user.getBalance() + " in your wallet");
+        try {
+            user.addFundsToWallet(creditCard, amount);
+        } catch (Exception e) {
+            System.out.println(e.getMessage().toString());
+        }
+        System.out.println("Now you have " + user.getBalance() + " pound in your wallet");
+    }
+
+    private static void displayAvailableDiscounts() {
+        discountHandler.displayAvailableDiscounts();
     }
 
     private static void requestRefund() {
@@ -344,26 +407,61 @@ public class Main {
 
     public static void displayTransactions(ArrayList<Transaction> transactions) {
         for (int i = 1; i <= transactions.size(); i++) {
-            System.out.println(i + "-From Account Number "
-                    + transactions.get(i - 1).getFrom() + " - to - " +
+            System.out.println(i + "-From Bank Account Number "
+                    + transactions.get(i - 1).getFrom() + " - to - Bank Account Number" +
                     transactions.get(i - 1).getTo() + " Status " +
                     "(" + transactions.get(i - 1).getTransactionStatus() + ")");
         }
     }
 
-    private static void signUpFakeUsers(LoginSubSystem loginSubSystem) {
+    private static void signUpFakeUsers() {
         try {
-            User user3 = loginSubSystem.signUp("heloow@hello.com", "hi", "Zer2984");
-            CreditCard userCard = new CreditCard("Osama", "Ahmed", "28392382323");
+            User user3 = loginSubSystem.signUp("ahmed@hello.com", "osman", "Zer2984");
+            CreditCard userCard = new CreditCard("ahmed", "osman", "28392382323");
             user3.addFundsToWallet(userCard, 50);
 
-            User user5 = loginSubSystem.signUp("Eyad@hotmail.com", "Khalid021", "helloWorld");
-            CreditCard userCard2 = new CreditCard("Mohammad@yahoo.com", "Hamed909", "2839238323");
+            User user5 = loginSubSystem.signUp("Eyad@hotmail.com", "khalid", "helloWorld");
+            CreditCard userCard2 = new CreditCard("Eyad", "khalid", "2839238323");
             user5.addFundsToWallet(userCard2, 100);
 
-            loginSubSystem.signUp("Eyad2@gmail.com", "Khalid", "helloworld");
+            loginSubSystem.signUp("osama@gmail.com", "Mohammad", "osama123");
         } catch (Exception e) {
             System.out.println(e.getMessage().toString());
         }
     }
+
+    private static void addDiscount() {
+        try {
+            Discount discount = new Discount(Discount.DiscountType.LandlineServices,
+                    "202", 20);
+            discountHandler.addDiscount(discount);
+
+            discount = new Discount(Discount.DiscountType.MobileRechargeServices,
+                    "207", 50);
+            discountHandler.addDiscount(discount);
+
+            discount = new Discount(Discount.DiscountType.InternetPaymentServices,
+                    "A2HL012", 30);
+            discountHandler.addDiscount(discount);
+        } catch (Exception e) {
+            System.out.println(e.getMessage().toString());
+        }
+    }
+
+    private static void displayWelcomeMessage() {
+        programMenu.displayWelcomeMessage();
+    }
+
+    private static void displayStartUpMenu() {
+        programMenu.startUpMenu();
+    }
+
+    private static void displayPaymentMethods() {
+        programMenu.displayPaymentMethods();
+    }
+
+    private static void displayMainMenu() {
+        programMenu.mainMenu();
+    }
 }
+

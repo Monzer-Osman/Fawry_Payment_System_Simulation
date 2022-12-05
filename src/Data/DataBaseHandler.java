@@ -1,11 +1,12 @@
 package Data;
+import Discount.Discount;
 import PaymentServices.Transaction;
 
 import java.util.ArrayList;
 
 public class DataBaseHandler {
-    StorageInterface database;
-    public DataBaseHandler(StorageInterface database) {
+    IStorage database;
+    public DataBaseHandler(IStorage database) {
         this.database = database;
     }
     public User signIn(String email, String password) throws Exception{
@@ -25,5 +26,13 @@ public class DataBaseHandler {
 
     public void addRefundRequest(Transaction transaction){
         database.addRefundRequest(transaction);
+    }
+
+    public void addDiscount(Discount discount) {
+        database.addDiscount(discount);
+    }
+
+    public ArrayList<Discount> getDiscounts() {
+        return database.getDiscounts();
     }
 }

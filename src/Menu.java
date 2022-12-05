@@ -13,10 +13,9 @@ public class Menu {
         System.out.println("--------------------------");
         System.out.println("0-Exit Program");
         System.out.println("1-Query Services");
-        System.out.println("2-Query Discounts");
+        System.out.println("2-Display Available Discounts");
         System.out.println("3-Add Balance To Wallet");
-        System.out.println("4-Display Previous Transactions");
-        System.out.println("5-Request Refund");
+        System.out.println("4-Request Refund");
     }
 
     public void displayPaymentMethods(){

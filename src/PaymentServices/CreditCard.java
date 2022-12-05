@@ -12,32 +12,9 @@ public class CreditCard implements PaymentService{
     }
 
     @Override
-    public Transaction pay(String receiverAccountNumber, int amount) {
+    public Transaction pay(String receiverAccountNumber, int amount) throws Exception{
         return new Transaction(userAccountNumber, receiverAccountNumber,
                 Transaction.TransactionStatus.COMPLETED, amount);
     }
 
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getUserAccountNumber() {
-        return userAccountNumber;
-    }
-
-    public void setUserAccountNumber(String userAccountNumber) {
-        this.userAccountNumber = userAccountNumber;
-    }
 }
