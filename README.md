@@ -1,18 +1,22 @@
 <h1>Fawry Payment System Simulation</h1>
 <p>
 Fawry is an online payment system that allows users to perform a lot of online transactions like
-1-recharge mobile numbers
-2-pay home network fees
-3-make donation for charity organizations, schools, hospitals, etc...
-4-pay home-land fees 
-..etc
 </p>
+<br>
+1-recharge mobile numbers
+<br>
+2-pay home network fees
+<br>
+3-make donation for charity organizations, schools, hospitals, etc...
+<br>
+4-pay home-land fees 
+<br>
+..etc
 <hr>
 
 <h2>Snapshots From the app</h2>
 
 <img src="https://user-images.githubusercontent.com/36456231/217681814-52523bda-fdd2-4ee1-9eee-8c87a45d702b.png" alt="welcome_page"/>
-
 
 ![signup](https://user-images.githubusercontent.com/36456231/217681824-f0c528b3-277e-4361-a867-d5cad71aeb1b.png)
 
